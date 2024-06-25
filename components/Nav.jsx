@@ -4,9 +4,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {useEffect, useState} from 'react';
 import { signIn, signOut, useSession, getProviders } from 'next-auth/react';
+import { set } from 'mongoose';
 
 const Nav = () => {
   const isUserLoggedIn = true;
+
+   //效果：在第一次加载组件时调用getProviders函数，赋给providers变量
+     const [providers, setProviders] = useState(null);
+     const [toggleDropdown, setToggleDropdown] = useState(false);
+
+    useEffect(() => {
+      const setData = async () => {
+        const response = await getProviders();
+
+        setProviders(response);
+      };
+
+      setData();
+    } ,[]);
+
   return (
     <nav className='flex-between w-full mb-16 pt-3'>
       <Link href="/" className='flex gap-2 flex-center'>
@@ -20,6 +36,7 @@ const Nav = () => {
         <p className='logo_text'>Promtopia</p>
       </Link>
 
+      {/* Desktop Navigation */}
       <div className='sm:flex hidden'>
         {isUserLoggedIn ? (
           <div className='flex gap-3 md:gap-5'>
@@ -42,10 +59,76 @@ const Nav = () => {
         ):
         (
           < >
+          {providers && Object.values(providers).map((provider) => (
+           <button
+           type='button'
+           onClick={() => signIn(provider.id)}
+           key={provider.name}
+           className='black_btn'>
+            Sign In
+           </button>
+          ))}
           </>
         )
         }
       </div>
+
+      {/* Mobile Navigation */}
+        <div className='sm:hidden flex relative'>
+          {isUserLoggedIn ? (
+              <div className='flex'>
+              <Image
+                src="/assets/images/logo.svg"
+                className="rounded-full"
+                width={37}
+                height={37}
+                alt='profile'
+                onClick={() => {setToggleDropdown((prev) => !prev)}}
+              />
+              {toggleDropdown && (
+                <div className='dropdown'>
+                  <Link
+                    href='/profile'
+                    className='dropdown_link'
+                    onClick={() => setToggleDropdown(false)}
+                  >
+                  My Profile
+                  </Link>
+                  <Link
+                    href='/create-prompt'
+                    className='dropdown_link'
+                    onClick={() => setToggleDropdown(false)}
+                  >
+                  Create Prompt
+                  </Link>
+                  <button
+                    type='button'
+                    className='mt-5 w-full black_btn'
+                    onClick = {() => {
+                        setToggleDropdown(false);
+                        signOut();
+                      }
+                    }
+                    >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            < >
+            {providers && Object.values(providers).map((provider) => (
+             <button
+             type='button'
+             onClick={() => signIn(provider.id)}
+             key={provider.name}
+             className='black_btn'>
+              Sign In
+             </button>
+            ))}
+            </>
+          )}
+        </div>
     </nav>
   )
 }
